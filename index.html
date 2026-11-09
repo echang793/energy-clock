@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Run It Now?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: one narrow column — verdict, 24-hour dial, appliance cards, settings. */
+:root {
+  --bg: #f3f5f7; --surface: #ffffff; --fg: #17202b; --muted: #5d6b7a; --line: #dde3ea;
+  --accent: #1f6feb;
+  --p-super: #1f9d74; --p-off: #3b7dd8; --p-mid: #d99a1e; --p-on: #d64545; --sun: #f2b705;
+  --good-bg: #e3f5ee; --warn-bg: #fdf1dc; --bad-bg: #fbe4e4;
+  --f-display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f141a; --surface: #18202a; --fg: #e8edf2; --muted: #9aa8b6; --line: #2a3542;
+  --accent: #6aa8ff; --p-super: #34c493; --p-off: #5f9bf0; --p-mid: #f0b440; --p-on: #f06b6b; --sun: #ffd23f;
+  --good-bg: #133227; --warn-bg: #3a2c10; --bad-bg: #3d1a1a; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0f141a; --surface: #18202a; --fg: #e8edf2; --muted: #9aa8b6; --line: #2a3542;
+  --accent: #6aa8ff; --p-super: #34c493; --p-off: #5f9bf0; --p-mid: #f0b440; --p-on: #f06b6b; --sun: #ffd23f;
+  --good-bg: #133227; --warn-bg: #3a2c10; --bad-bg: #3d1a1a; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 var(--f-body); }
+.wrap { max-width: 640px; margin: 0 auto; padding-block: 20px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 20px; }
+header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+h1 { font: 800 1.9rem/1 var(--f-display); margin: 0; letter-spacing: -0.02em; }
+h2 { font: 600 1.15rem/1.2 var(--f-display); margin: 0; text-wrap: balance; }
+.place { color: var(--muted); font-size: .9rem; }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.banner { padding: 10px 14px; border-radius: 10px; background: var(--bad-bg); font-size: .9rem; }
+.verdict { border-radius: 16px; padding: 18px 20px; display: grid; gap: 6px; }
+.verdict.good { background: var(--good-bg); } .verdict.warn { background: var(--warn-bg); } .verdict.bad { background: var(--bad-bg); }
+.verdict .big { font: 800 1.6rem/1.15 var(--f-display); text-wrap: balance; }
+.verdict .sub { color: var(--muted); }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { font-size: .78rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); letter-spacing: .02em; }
+.chip i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+.dial-box { display: grid; justify-items: center; gap: 10px; }
+.dial-box svg { width: min(100%, 340px); height: auto; }
+.legend { display: flex; gap: 6px 14px; flex-wrap: wrap; justify-content: center; font-size: .8rem; color: var(--muted); }
+.legend span i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; display: grid; gap: 4px; min-width: 0; }
+.card .label { font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.card .when { font: 600 1.25rem/1.2 var(--f-display); }
+.card .save { font-size: .88rem; }
+.card .save b { color: var(--p-super); }
+.card .now-ok { color: var(--p-super); font-weight: 600; font-size: .88rem; }
+details { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 16px; }
+summary { cursor: pointer; font-weight: 600; }
+.form { display: grid; gap: 14px; margin-top: 14px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; }
+label { display: grid; gap: 4px; font-size: .82rem; color: var(--muted); flex: 1 1 140px; }
+input, select, button { font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-width: 0; }
+button { background: var(--accent); color: #fff; border: 0; font-weight: 600; cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.rates { width: 100%; border-collapse: collapse; font-size: .88rem; }
+.rates th, .rates td { text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--line); }
+.rates input { width: 90px; }
+.note { font-size: .8rem; color: var(--muted); }
+footer { font-size: .78rem; color: var(--muted); }
+footer a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Run It Now?</h1>
+    <span class="place" id="place">Loading…</span>
+  </header>
+  <div class="banner" id="error" hidden></div>
+  <section class="verdict" id="verdict" aria-live="polite"></section>
+  <section class="dial-box">
+    <svg id="dial" viewBox="-20 -20 360 360" role="img" aria-label="24-hour price and solar dial"></svg>
+    <div class="legend" id="legend"></div>
+  </section>
+  <section>
+    <h2 style="margin-bottom:10px">Best start times in the next 24 hours</h2>
+    <div class="cards" id="cards"></div>
+  </section>
+  <details id="settings">
+    <summary>Settings: location, rate plan, solar</summary>
+    <div class="form">
+      <div class="row">
+        <label for="zip">ZIP code or city<input id="zip" placeholder="92618"></label>
+        <button id="find" type="button">Set location</button>
+      </div>
+      <div class="row">
+        <label for="plan">Rate plan<select id="plan"></select></label>
+      </div>
+      <div style="overflow-x:auto"><table class="rates" id="rates"></table></div>
+      <div class="row">
+        <label for="size">Solar size (kW DC)<input id="size" type="number" step="0.1" min="0"></label>
+        <label for="base">Home's usual draw (kW)<input id="base" type="number" step="0.1" min="0"></label>
+        <label for="export">Solar export credit ($/kWh)<input id="export" type="number" step="0.01" min="0"></label>
+      </div>
+      <p class="note">Starting rates are typical 2025 values, not your bill. Copy the per-kWh numbers from your bill for real savings. Holidays are treated as regular days. Your battery helps cover 4–9 PM, but anything you run then drains it, so peak hours still cost peak prices.</p>
+    </div>
+  </details>
+  <footer>Forecast from <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> (free, no key). Solar estimate assumes south-facing panels at a 20° tilt with 15% losses. Updated <span id="updated">–</span>.</footer>
+</div>
+
+<script>
+const PERIOD = {
+  super: { name: "Super off-peak", color: "var(--p-super)" },
+  off:   { name: "Off-peak",       color: "var(--p-off)" },
+  mid:   { name: "Mid-peak",       color: "var(--p-mid)" },
+  on:    { name: "On-peak",        color: "var(--p-on)" },
+};
+const isWeekend = dow => dow === 0 || dow === 6;
+// SCE TOU-D plans share hours: summer (Jun–Sep) 4–9 PM peak, weekends mid-peak;
+// winter 4–9 PM mid-peak, 8 AM–4 PM super off-peak.
+const sceHours = (summer, dow, h) => {
+  if (summer) return h >= 16 && h < 21 ? (isWeekend(dow) ? "mid" : "on") : "off";
+  if (h >= 16 && h < 21) return "mid";
+  return h >= 8 && h < 16 ? "super" : "off";
+};
+const PLANS = {
+  "sce-prime": { label: "SCE TOU-D-PRIME", isSummer: m => m >= 6 && m <= 9, period: (s, dow, h) => sceHours(s, dow, h),
+    prices: { summer: { on: 0.61, mid: 0.43, off: 0.26 }, winter: { mid: 0.58, off: 0.25, super: 0.24 } } },
+  "sce-49": { label: "SCE TOU-D-4-9PM", isSummer: m => m >= 6 && m <= 9, period: (s, dow, h) => sceHours(s, dow, h),
+    prices: { summer: { on: 0.55, mid: 0.44, off: 0.34 }, winter: { mid: 0.50, off: 0.37, super: 0.33 } } },
+  "sdge-dr1": { label: "SDG&E TOU-DR1", isSummer: m => m >= 6 && m <= 10,
+    period: (s, dow, h, m) => {
+      if (h >= 16 && h < 21) return "on";
+      if (h < 6 || (isWeekend(dow) && h < 14)) return "super";
+      if (!isWeekend(dow) && (m === 3 || m === 4) && h >= 10 && h < 14) return "super";
+      return "off";
+    },
+    prices: { summer: { on: 0.62, off: 0.46, super: 0.36 }, winter: { on: 0.55, off: 0.48, super: 0.44 } } },
+};
+const APPLIANCES = [
+  { name: "Laundry", detail: "Washer + dryer", kw: 2.5, hrs: 2 },
+  { name: "Dishwasher", detail: "Normal cycle", kw: 1.2, hrs: 2 },
+  { name: "EV charging", detail: "Level 2, 7.2 kW", kw: 7.2, hrs: 4 },
+  { name: "Pool pump", detail: "Daily run", kw: 1.5, hrs: 6 },
+];
+const DEFAULTS = { plan: "sce-prime", place: "Irvine, CA (example)", lat: 33.6695, lon: -117.8231,
+  size: 7, base: 0.6, exportRate: 0.06, prices: {} };
+
+let settings = load();
+let forecast = null;   // { hours: [...], nowIdx } or null when the fetch failed
+let fetchError = "";
+
+function load() {
+  try { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem("energy-clock") || "{}") }; }
+  catch { return { ...DEFAULTS }; }
+}
+function save() { try { localStorage.setItem("energy-clock", JSON.stringify(settings)); } catch {} }
+
+function priceTable(planKey) {
+  const base = PLANS[planKey].prices, own = settings.prices[planKey] || {};
+  return { summer: { ...base.summer, ...(own.summer || {}) }, winter: { ...base.winter, ...(own.winter || {}) } };
+}
+
+// One hour slot: local calendar fields plus forecast solar irradiance (W/m², or null).
+function rateFor(slot) {
+  const plan = PLANS[settings.plan];
+  const summer = plan.isSummer(slot.m);
+  const period = plan.period(summer, slot.dow, slot.h, slot.m);
+  return { period, price: priceTable(settings.plan)[summer ? "summer" : "winter"][period] };
+}
+function solarKw(slot) { return slot.gti == null ? 0 : settings.size * (slot.gti / 1000) * 0.85; }
+// Cost per kWh for an extra load of `kw` this hour: solar surplus is worth only the export credit.
+function effPrice(slot, kw) {
+  const { price } = rateFor(slot);
+  const surplus = Math.max(0, solarKw(slot) - settings.base);
+  const covered = Math.min(kw, surplus);
+  return (covered * settings.exportRate + (kw - covered) * price) / kw;
+}
+function runCost(hours, start, a) {
+  let c = 0;
+  for (let k = 0; k < a.hrs; k++) c += a.kw * effPrice(hours[start + k], a.kw);
+  return c;
+}
+
+function slotsFromLocalClock() {
+  const out = [], now = new Date();
+  now.setMinutes(0, 0, 0);
+  for (let i = 0; i < 48; i++) {
+    const d = new Date(now.getTime() + i * 3600e3);
+    out.push({ y: d.getFullYear(), m: d.getMonth() + 1, d: d.getDate(), h: d.getHours(), dow: d.getDay(), gti: null });
+  }
+  return { hours: out, nowIdx: 0 };
+}
+
+async function fetchForecast() {
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${settings.lat}&longitude=${settings.lon}` +
+    `&hourly=global_tilted_irradiance,cloud_cover&tilt=20&azimuth=0&timezone=auto&forecast_days=3`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`forecast service answered ${res.status}`);
+  const j = await res.json();
+  const t = j?.hourly?.time, g = j?.hourly?.global_tilted_irradiance;
+  if (!Array.isArray(t) || !Array.isArray(g) || t.length < 48 || g.length !== t.length)
+    throw new Error("forecast came back empty or incomplete");
+  const hours = t.map((iso, i) => {
+    const [date, time] = iso.split("T"), [y, m, d] = date.split("-").map(Number), h = Number(time.slice(0, 2));
+    const gti = Number.isFinite(g[i]) ? g[i] : null;
+    return { y, m, d, h, dow: new Date(Date.UTC(y, m - 1, d)).getUTCDay(), gti, cloud: j.hourly.cloud_cover?.[i] };
+  });
+  // "Now" in the location's own time zone.
+  const local = new Date(Date.now() + j.utc_offset_seconds * 1000);
+  const key = [local.getUTCFullYear(), local.getUTCMonth() + 1, local.getUTCDate(), local.getUTCHours()].join("-");
+  const nowIdx = hours.findIndex(s => [s.y, s.m, s.d, s.h].join("-") === key);
+  if (nowIdx < 0 || nowIdx + 24 > hours.length) throw new Error("forecast does not cover the next 24 hours");
+  return { hours, nowIdx };
+}
+
+const fmtHour = h => `${h % 12 || 12} ${h < 12 ? "AM" : "PM"}`;
+const money = v => `$${v.toFixed(2)}`;
+function whenLabel(slot, nowSlot) {
+  const sameDay = slot.d === nowSlot.d && slot.m === nowSlot.m;
+  return (sameDay ? "Today " : "Tomorrow ") + fmtHour(slot.h);
+}
+
+function render() {
+  const data = forecast || slotsFromLocalClock();
+  const { hours, nowIdx } = data;
+  const now = hours[nowIdx];
+  const errEl = document.getElementById("error");
+  errEl.hidden = !fetchError;
+  errEl.textContent = !fetchError ? "" : forecast
+    ? `Couldn't update: ${fetchError}. Still showing the last forecast.`
+    : `Couldn't load the solar forecast (${fetchError}). Times below use rates only and ignore solar. Check your connection and reload.`;
+  document.getElementById("place").textContent = `${settings.place} · ${PLANS[settings.plan].label}`;
+  renderVerdict(hours, nowIdx);
+  renderDial(hours, nowIdx);
+  renderCards(hours, nowIdx, now);
+  document.getElementById("updated").textContent = new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
+
+function renderVerdict(hours, nowIdx) {
+  const kw = 1.5, window24 = hours.slice(nowIdx, nowIdx + 24);
+  const prices = window24.map(s => effPrice(s, kw));
+  const nowP = prices[0], min = Math.min(...prices);
+  const bestI = prices.indexOf(min), best = window24[bestI];
+  const { period } = rateFor(hours[nowIdx]);
+  const sun = solarKw(hours[nowIdx]);
+  let cls, big, sub;
+  if (nowP <= min * 1.1 + 0.005) {
+    cls = "good"; big = "Yes, run it now.";
+    sub = sun > settings.base ? `Your panels are making about ${sun.toFixed(1)} kW, more than the house is using.` : "This is about as cheap as it gets for the next day.";
+  } else if (period === "on" || (period === "mid" && nowP >= Math.max(...prices) - 0.01)) {
+    const end = window24.findIndex(s => rateFor(s).period !== period);
+    cls = "bad"; big = `Wait. ${PERIOD[period].name} until ${fmtHour(window24[end]?.h ?? 21)}.`;
+    sub = `Cheapest hour coming up: ${whenLabel(best, hours[nowIdx])} at ${money(min)}/kWh.`;
+  } else {
+    const pct = Math.round((1 - min / nowP) * 100);
+    cls = "warn"; big = `It's okay now, but ${whenLabel(best, hours[nowIdx]).replace(/^\w/, c => c.toLowerCase())} is ${pct}% cheaper.`;
+    sub = `Now ${money(nowP)}/kWh vs ${money(min)}/kWh then.`;
+  }
+  document.getElementById("verdict").className = `verdict ${cls}`;
+  document.getElementById("verdict").innerHTML =
+    `<div class="big"></div><div class="sub"></div><div class="chips">
+      <span class="chip"><i style="background:${PERIOD[period].color}"></i>${PERIOD[period].name}</span>
+      <span class="chip mono">${money(nowP)}/kWh now</span>
+      <span class="chip"><i style="background:var(--sun)"></i>Solar ${forecast ? sun.toFixed(1) + " kW" : "unknown"}</span></div>`;
+  document.querySelector("#verdict .big").textContent = big;
+  document.querySelector("#verdict .sub").textContent = sub;
+}
+
+function arc(r1, r2, a0, a1) {
+  const p = (r, a) => [160 + r * Math.sin(a), 160 - r * Math.cos(a)].map(v => v.toFixed(2)).join(" ");
+  const large = a1 - a0 > Math.PI ? 1 : 0;
+  return `M${p(r2, a0)} A${r2} ${r2} 0 ${large} 1 ${p(r2, a1)} L${p(r1, a1)} A${r1} ${r1} 0 ${large} 0 ${p(r1, a0)}Z`;
+}
+function renderDial(hours, nowIdx) {
+  const step = Math.PI / 12, gap = 0.012;
+  let svg = `<circle cx="160" cy="160" r="150" fill="var(--surface)" stroke="var(--line)"/>`;
+  for (let k = 0; k < 24; k++) {
+    const s = hours[nowIdx + k], a0 = s.h * step + gap, a1 = (s.h + 1) * step - gap;
+    svg += `<path d="${arc(116, 144, a0, a1)}" fill="${PERIOD[rateFor(s).period].color}" opacity="${k === 0 ? 1 : 0.85}"/>`;
+    const frac = Math.min(1, solarKw(s) / Math.max(settings.size * 0.85, 0.1));
+    if (frac > 0.02) svg += `<path d="${arc(110 - 34 * frac, 110, a0, a1)}" fill="var(--sun)"/>`;
+  }
+  for (let h = 0; h < 24; h += 3) {
+    const a = h * step, x = 160 + 62 * Math.sin(a), y = 160 - 62 * Math.cos(a) + 4;
+    svg += `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="var(--f-mono)">${h === 0 ? "12a" : h === 12 ? "12p" : h < 12 ? h + "a" : (h - 12) + "p"}</text>`;
+  }
+  const nowD = new Date(), frac = hours[nowIdx].h + (forecast ? nowD.getMinutes() / 60 : 0.5);
+  const a = frac * step, hx = 160 + 150 * Math.sin(a), hy = 160 - 150 * Math.cos(a);
+  svg += `<line x1="160" y1="160" x2="${hx.toFixed(1)}" y2="${hy.toFixed(1)}" stroke="var(--fg)" stroke-width="3" stroke-linecap="round"/>`;
+  svg += `<circle cx="160" cy="160" r="6" fill="var(--fg)"/>`;
+  svg += `<text x="160" y="190" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="var(--f-body)">next 24 hours</text>`;
+  document.getElementById("dial").innerHTML = svg;
+  const used = new Set(hours.slice(nowIdx, nowIdx + 24).map(s => rateFor(s).period));
+  document.getElementById("legend").innerHTML = Object.entries(PERIOD).filter(([k]) => used.has(k))
+    .map(([, p]) => `<span><i style="background:${p.color}"></i>${p.name}</span>`).join("") +
+    `<span><i style="background:var(--sun)"></i>Solar output</span>`;
+}
+
+function renderCards(hours, nowIdx, now) {
+  document.getElementById("cards").innerHTML = APPLIANCES.map(a => {
+    let best = nowIdx, bestC = Infinity;
+    for (let i = nowIdx; i < nowIdx + 24 && i + a.hrs <= hours.length; i++) {
+      const c = runCost(hours, i, a);
+      if (c < bestC - 1e-9) { bestC = c; best = i; }
+    }
+    const nowC = runCost(hours, nowIdx, a), saves = nowC - bestC;
+    const line = saves < 0.05
+      ? `<div class="now-ok">Now is the best time · ${money(nowC)}</div>`
+      : `<div class="save mono">${money(bestC)} vs ${money(nowC)} now · <b>save ${money(saves)}</b></div>`;
+    return `<div class="card"><span class="label">${a.name} · ${a.detail}</span>
+      <span class="when">${saves < 0.05 ? "Start now" : "Start " + whenLabel(hours[best], now)}</span>${line}</div>`;
+  }).join("");
+}
+
+function renderSettings() {
+  const planSel = document.getElementById("plan");
+  planSel.innerHTML = Object.entries(PLANS).map(([k, p]) => `<option value="${k}">${p.label}</option>`).join("");
+  planSel.value = settings.plan;
+  document.getElementById("size").value = settings.size;
+  document.getElementById("base").value = settings.base;
+  document.getElementById("export").value = settings.exportRate;
+  const t = priceTable(settings.plan), keys = ["super", "off", "mid", "on"].filter(k => k in t.summer || k in t.winter);
+  const cell = (season, k) => k in t[season]
+    ? `<input id="rate-${season}-${k}" class="mono" type="number" step="0.01" min="0" value="${t[season][k]}" aria-label="${season} ${PERIOD[k].name} $/kWh">` : "–";
+  document.getElementById("rates").innerHTML = `<tr><th>Period ($/kWh)</th><th>Summer</th><th>Winter</th></tr>` +
+    keys.map(k => `<tr><td>${PERIOD[k].name}</td><td>${cell("summer", k)}</td><td>${cell("winter", k)}</td></tr>`).join("");
+}
+
+function num(id, fallback) { const v = parseFloat(document.getElementById(id).value); return Number.isFinite(v) && v >= 0 ? v : fallback; }
+document.getElementById("settings").addEventListener("change", e => {
+  const id = e.target.id;
+  if (id === "plan") { settings.plan = e.target.value; renderSettings(); }
+  else if (id === "size") settings.size = num("size", settings.size);
+  else if (id === "base") settings.base = num("base", settings.base);
+  else if (id === "export") settings.exportRate = num("export", settings.exportRate);
+  else if (id.startsWith("rate-")) {
+    const [, season, k] = id.split("-");
+    settings.prices[settings.plan] ??= {};
+    settings.prices[settings.plan][season] ??= {};
+    settings.prices[settings.plan][season][k] = num(id, priceTable(settings.plan)[season][k]);
+  } else return;
+  save(); render();
+});
+
+document.getElementById("find").addEventListener("click", async () => {
+  const q = document.getElementById("zip").value.trim();
+  if (!q) return;
+  const btn = document.getElementById("find");
+  btn.disabled = true; btn.textContent = "Looking…";
+  try {
+    const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=1&countryCode=US`);
+    const hit = (await res.json())?.results?.[0];
+    if (!hit) throw new Error(`no place found for "${q}"`);
+    Object.assign(settings, { lat: hit.latitude, lon: hit.longitude, place: `${hit.name}, ${hit.admin1 ?? ""}`.replace(/, $/, "") });
+    save(); await refresh();
+  } catch (err) {
+    fetchError = err.message; render();
+  } finally { btn.disabled = false; btn.textContent = "Set location"; }
+});
+
+async function refresh() {
+  try { forecast = await fetchForecast(); fetchError = ""; }
+  catch (err) { forecast = null; fetchError = err.message; }
+  render();
+}
+
+renderSettings();
+render();
+refresh();
+setInterval(refresh, 30 * 60 * 1000);
+</script>
+</body>
+</html>
